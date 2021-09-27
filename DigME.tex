@@ -1,6 +1,6 @@
 % !TeX program = xelatex
 % !TeX encoding = utf8
-% !TeX root = Vorlage.tex
+% !TeX root = DigME.tex
 
 %% TODO: publish to CTAN
 \documentclass[]{tex/hsrzf}
@@ -13,27 +13,26 @@
 
 %% Language configuration
 \usepackage{polyglossia}
-\setdefaultlanguage[variant=swiss]{german}
+\setdefaultlanguage{english}
 
 %% License configuration
 \usepackage[
     type={CC},
     modifier={by-nc-sa},
     version={4.0},
-    lang={german},
 ]{doclicense}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Metadata
 
-\course{Elektrotechnik}
-\module{ModAbk}
-\semester{Fr\"uhlingssemester 2020}
+\course{Electrial Engineering}
+\module{DigMe}
+\semester{Fall Semester 2021}
 
-\authoremail{vname@hsr.ch}
-\author{\textsl{Vorname Name} -- \texttt{\theauthoremail}}
+\authoremail{naoki.pross@ost.ch}
+\author{\textsl{Naoki Pross} -- \texttt{\theauthoremail}}
 
-\title{\texttt{\themodule} Zusammenfassung}
+\title{\texttt{\themodule} Lecture Notes}
 \date{\thesemester}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -41,18 +40,17 @@
 
 \begin{document}
 
+\pagenumbering{roman}
 \maketitle
 \tableofcontents
 
-\section{Einf\"uhrung}
-\[
-  i\hbar \partial_t \left| \psi(t) \right\rangle 
-    = \hat{H} \left| \psi(t) \right\rangle
-\]
-
-
-\section{Lizenz}
+\section{License}
 \doclicenseThis
+
+\twocolumn
+\setcounter{page}{1}
+\pagenumbering{arabic}
+
 
 
 \end{document}
