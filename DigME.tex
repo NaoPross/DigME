@@ -2,14 +2,13 @@
 % !TeX encoding = utf8
 % !TeX root = DigME.tex
 
-%% TODO: publish to CTAN
-\documentclass[]{tex/hsrzf}
+\documentclass[margin=small]{tex/hsrzf}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Packages
 
-%% TODO: publish to CTAN
 \usepackage{tex/hsrstud}
+\usepackage{tex/docmacros}
 
 %% Language configuration
 \usepackage{polyglossia}
@@ -21,6 +20,16 @@
     modifier={by-nc-sa},
     version={4.0},
 ]{doclicense}
+
+%% Pretty pictures
+\usepackage{tikz-timing}
+\usetikztiminglibrary[rising arrows]{clockarrows}
+
+\tikzset{
+  timing/font = {\ttfamily},
+  timing/xunit = 8mm,
+  timing/yunit = 4mm,
+}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Metadata
@@ -52,5 +61,182 @@
 \pagenumbering{arabic}
 
 
+\section{Design Flow}
+
+\section{Design constraints static timing analysis (STA)}
+
+\subsection{Physical constraints}
+
+\subsection{Timing constraints}
+\begin{figure}[h]
+  \centering
+  \begin{tikztimingtable}[]
+    Clock & ccccccccccc\\
+  \end{tikztimingtable}
+\end{figure}
+\[
+  t_\text{input}
+\]
+
+\section{System level VHDL}
+
+\subsection{Aliases}
+The goal is now to build re-usable IP blocks with VHDL. For that we need to refresh some important features of the lanugage. The first of which are aliases.
+\begin{lstlisting}[language=vhdl]
+signal data_bus:
+  std_logic_vector(31 downto 0);
+alias first_nibble:
+  std_logic_vector(0 downto 3)
+    is dataBus (31 downto 28);
+\end{lstlisting}
+
+\subsection{Generics}
+%% TODO: generics
+
+\subsection{Generators}
+Another useful feature are \vhdl{generate} statement, with the syntax that allows the instantiation of multiple components.
+\begin{lstlisting}[language=vhdl]
+`\optionalph{label}`: for `\reqph{identifier}` in `\reqph{range}` generate
+  -- optional declaration part
+  -- begin only required if there is a declaration
+`\textrm{[}`begin`\textrm{]}`
+  -- concurrent statements
+end generate `\optionalph{label}`;
+\end{lstlisting}
+For example:
+\begin{lstlisting}[language=vhdl]
+for i in 0 to 7 generate
+  x(i) <= a(i) xor b(7 - i);
+end generate;
+\end{lstlisting}
+Or in a more realistic case, with components imported from elsewhere.
+\begin{lstlisting}[
+  language = vhdl,
+  caption = {
+    Example of generate with a component.
+    \label{lst:generate-component}
+  },
+]
+-- in architecture
+bcd_to_sseg_inst_loop:
+for i in 0 to nr_digits - 1 generate
+  bcd_to_sseg_inst: component bcd_to_sseg
+    port map(
+      clk => clk,
+      rst => rst,
+      bcd => bcd_array(i),
+      sseg => sseg_array(i)
+    );
+end generate;
+\end{lstlisting}
+where \vhdl{bcd_array} and \vhdl{sseg_array} are of course array types, and \vhdl{nr_digits} is a constant.
+
+\subsection{Functions and procedures}
+Furthermore VHDL has functions that can be useful to avoid rewriting the same code. Function have multiple inputs and a signel output, are allowed to be called recursively, but cannot declare or assign signals, nor use \vhdl{wait} statements.
+\begin{lstlisting}[language=vhdl]
+function `\reqph{name}` (`\optionalph{list of arguments with type}`)
+  return `\reqph{return type}`
+is
+  `\optionalph{declaration of variables}`
+begin
+  -- sequential statement (but not wait)
+\end{lstlisting}
+An example is a parity generator:
+\begin{lstlisting}[
+  language = vhdl,
+  caption = {
+    An odd parity generator function.
+    \label{lst:pargen}
+  }
+]
+function pargen(avect: std_ulogic_vector)
+  return std_ulogic
+is
+  variable po_var : std_logic;
+begin
+  po_var := '1';
+  for i in avect'range loop
+    if avect(i) = '1' then
+      po_var := not po_var;
+    end if;
+  end loop;
+  return po_var;
+end function pargen;
+\end{lstlisting}
+
+In testbenches it is common to see procedures. They differ for function as they can have multiple inputs and \emph{multiple output}. Because of this they in practice are usually not synthetizable. The syntax is similar to functions:
+\begin{lstlisting}[language=vhdl]
+procedure `\reqph{name}` (`\optionalph{list of arguments with direction}`) is
+  `\optionalph{declaration of variables}`
+begin
+  -- sequential statement
+end procedure `\reqph{name}`;
+\end{lstlisting}
+With \emph{list of arguments with direction} it is meant an expression like \vhdl{a, b : in real, w : out real}, similar to the arguments of \vhdl{port}.
+
+\subsection{Arrays and records}
+
+To efficiently use \vhdl{generate} statement, such as in listing \ref{lst:generate-component}, we ned array types. Arrays types (fields) of other types are defined with the following syntax.
+\begin{lstlisting}[language=vhdl]
+type `\reqph{name}` is array (`\reqph{upper limit}` downto `\reqph{lower limit}`) of `\reqph{base type}`;
+\end{lstlisting}
+For example to complete listing \ref{lst:generate-component}, we create 1 by 1 matrices.
+\begin{lstlisting}[language = vhdl]
+constant nr_digits : integer := 3;
+type bcd_array_type is
+  array (0 to nr_digits -1)
+  of std_ulogic_vector(3 downto 0);
+type bcd_array_type is
+  array (0 to nr_digits -1)
+  of std_ulogic_vector(6 downto 0);
+\end{lstlisting}
+
+While all arrays elements must have the same underlying type, \emph{records} allow for different types to be combined together.
+%% TODO: syntax block
+For example:
+\begin{lstlisting}[language = vhdl]
+type memory_access is record
+  address : integer range 0 to address_max -1;
+  mem_block : integer range 0 to 3;
+  data : std_ulogic_vector(word_width -1 downto 0);
+end record;
+\end{lstlisting}
+
+\subsection{Packages}
+
+To declare your own packges, the syntax is rather easy:
+\begin{lstlisting}[language = vhdl]
+`\reqph{{\tt library} and / or {\tt use} statements}`
+package `\reqph{name}` is
+  `\optionalph{declarations}`
+end `\reqph{package name}`;
+\end{lstlisting}
+And possibly in another file the implementation is give with:
+\begin{lstlisting}[language = vhdl]
+package body `\reqph{name}` is
+  `\reqph{list of definitions}`
+end `\reqph{name}`;
+\end{lstlisting}
+
+In practice it is common to see for example a configuration package, that contains all constants for the project. For example if we were to put the function \vhdl{pargen} from listing \ref{lst:pargen} we could do:
+\begin{lstlisting}[language = vhdl]
+package parity_helpers is
+  constant nibble : integer;
+  constant word   : integer;
+  function pargen(avect : std_ulogic_vector) return std_ulogic;
+end package parity_helpers;
+
+package body parity_helpers is
+  -- functions
+  function pargen(avect: std_ulogic_vector)
+    return std_ulogic
+  is `\textrm{From listing \ref{lst:pargen}}`
+  end function pargen;
+  -- instantiation of variables
+  constant nibble : integer := 4;
+  constant word   : integer := 8;
+end package body parity_helpers;
+\end{lstlisting}
+And later use it with \vhdl{use work.parity_helpers.all}.
 
 \end{document}
