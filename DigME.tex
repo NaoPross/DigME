@@ -65,17 +65,30 @@
 
 \section{Design constraints and static timing analysis (STA)}
 
+Synthesis and implementation tools can reduce VHDL code into a set of combinatoric and sequetial logic parts, but for the last step information about the hardware is required. Such information is given through the \emph{constraints} defined through XDC\footnote{Xilix Design Constraints, proprietary format.}  or SDC\footnote{Synopsys Design Contraints, industry standard.} files. Both file formats are mostly a set ot TCL commands.
+
+Constraints should be generally organized in three sections (or separate files):
+\begin{itemize}
+  \item Physical constraints: described below, usually before timing.
+  \item Timing assertions: primary clocks, virtual clocks, generated clocks, clock groups, input and output delay constraints.
+  \item Timing exceptions: false paths, min / max delay, multicycle paths, case analysis, disable timing.
+\end{itemize}
+
 \subsection{Physical constraints}
 
+Physical contraints include: I/O contraints, Netlist constraints, Placement constraints, Routing constraings. Physical constraints are usually given through the graphical user interface.
+
 \subsection{Timing constraints}
-\begin{figure}[h]
-  \centering
-  \begin{tikztimingtable}[]
-    Clock & ccccccccccc\\
-  \end{tikztimingtable}
-\end{figure}
+
+% \begin{figure}[h]
+%   \centering
+%   \begin{tikztimingtable}[]
+%     Clock & ccccccccccc\\
+%   \end{tikztimingtable}
+% \end{figure}
+
 \[
-  t_\text{input}
+  t_\text{slack} = T - t_\text{arrival}
 \]
 
 \section{System level VHDL}
