@@ -41,7 +41,7 @@
 \authoremail{naoki.pross@ost.ch}
 \author{\textsl{Naoki Pross} -- \texttt{\theauthoremail}}
 
-\title{\texttt{\themodule} Lecture Notes}
+\title{\texttt{\themodule}: Digital Microelectronics}
 \date{\thesemester}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -63,7 +63,7 @@
 
 \section{Design Flow}
 
-\section{Design constraints static timing analysis (STA)}
+\section{Design constraints and static timing analysis (STA)}
 
 \subsection{Physical constraints}
 
@@ -87,7 +87,7 @@ signal data_bus:
   std_logic_vector(31 downto 0);
 alias first_nibble:
   std_logic_vector(0 downto 3)
-    is dataBus (31 downto 28);
+    is data_bus(31 downto 28);
 \end{lstlisting}
 
 \subsection{Generics}
@@ -140,6 +140,7 @@ is
   `\optionalph{declaration of variables}`
 begin
   -- sequential statement (but not wait)
+end function `\reqph{name}`;
 \end{lstlisting}
 An example is a parity generator:
 \begin{lstlisting}[
@@ -172,7 +173,7 @@ begin
   -- sequential statement
 end procedure `\reqph{name}`;
 \end{lstlisting}
-With \emph{list of arguments with direction} it is meant an expression like \vhdl{a, b : in real, w : out real}, similar to the arguments of \vhdl{port}.
+With \emph{list of arguments with direction} it is meant an expression like \vhdl{a, b : in real; w : out real}, similar to the arguments of \vhdl{port}.
 
 \subsection{Arrays and records}
 
@@ -209,13 +210,13 @@ To declare your own packges, the syntax is rather easy:
 `\reqph{{\tt library} and / or {\tt use} statements}`
 package `\reqph{name}` is
   `\optionalph{declarations}`
-end `\reqph{package name}`;
+end package `\reqph{package name}`;
 \end{lstlisting}
 And possibly in another file the implementation is give with:
 \begin{lstlisting}[language = vhdl]
 package body `\reqph{name}` is
   `\reqph{list of definitions}`
-end `\reqph{name}`;
+end package body `\reqph{name}`;
 \end{lstlisting}
 
 In practice it is common to see for example a configuration package, that contains all constants for the project. For example if we were to put the function \vhdl{pargen} from listing \ref{lst:pargen} we could do:
