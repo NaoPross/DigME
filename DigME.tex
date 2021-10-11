@@ -1,6 +1,7 @@
 % !TeX program = xelatex
 % !TeX encoding = utf8
 % !TeX root = DigME.tex
+% vim: set ts=2 sw=2 et spell:
 
 \documentclass[margin=small]{tex/hsrzf}
 
@@ -252,5 +253,81 @@ package body parity_helpers is
 end package body parity_helpers;
 \end{lstlisting}
 And later use it with \vhdl{use work.parity_helpers.all}.
+
+\subsection{Fixed point arithmetic}
+
+\subsubsection{Mathematics}
+
+Recall that a binary number is represented using weights `bits' \(a_k \in \{ 0, 1 \}\) in front of powers of 2, so that an integer \(z \in \mathbb{N}_0\) is represented with \(n\) bits as
+\[
+  z = \sum_{k=0}^{n-1} a_k 2^k .
+\]
+Thus with \(n\) bits we can represent the integer range \(\{0,\ldots, 2^{k-1}\}\).
+To expand this to negative integers we shift everything by \(2^k\) obtaining
+\[
+  z = -(2^{n-1}) a_{n-1} + \sum_{k=0}^{n-2} a_k 2^k,
+\]
+which allows for values in the asymmetric integer range \(\{-2^{n-1},\ldots, 2^{n-1} -1\}\). To further extend this to the rational numbers we add to the \(n\) integer bits, \(m\) fractional bits, such that
+\[
+  z = \sum_{k = -m}^{n - 1} a_k 2^k .
+\]
+This format is known as the \texttt{Qn.m} or \(Q(n,m)\) format. It is however not specified if the values are to be interpreted as signed or unsigned. For that there are: \texttt{uQn.m} for unsigned values which has range 0 to \(2^n - 2^{-m}\), and \texttt{sQn.m} for signed values with range \(-2^{n-1}\) to \(2^{n-1} - 2^{-m}\) (same as previous but shifted by \(2^n\)).
+
+When doing calculations using \texttt{Qn.m} with different sizes, generally the following rules apply:
+\begin{align*}
+  Q(n_1, m_1) &+ Q(n_2, m_2) \\
+    &= Q(\max(n_1, n_2) +1, \max(m_1, m_2)) \\
+  Q(n_1, m_1) &\cdot Q(n_2, m_2) = Q(n_1 + n_2, m_1 + m_2)
+\end{align*}
+%% TODO: review with skript
+% TODO: guard bit
+There is an edge case for products between \texttt{sQn.m} numbers where we can save a bit using
+\begin{align*}
+  Q_\mathrm{s}(n_1, m_1) &\cdot Q_\mathrm{s}(n_2, m_2) \\
+  &= Q_\mathrm{s}(n_1 + n_2 -1, m_1 + m_2 + 1)
+\end{align*}
+
+\subsubsection{Manual implementation}
+
+To manually implement fixed point arithmetic in VHDL, we can use \vhdl{integer} types by left shifting the numbers by the right amount. For example:
+\begin{lstlisting}[language = vhdl]
+constant A : real = 2.5248;
+-- to convert this into a uQ2.6 (8 bits)
+-- we have to left shift by 2^6.
+variable a_fix : unsigned(7 downto 0) :=
+  to_unsigned(integer(2.0 ** 6 * A), 8);
+-- Note that by keeping only 6 digits
+-- the value is truncated down to 2.5156
+\end{lstlisting}
+
+\subsubsection{With VHDL 2008 \vhdl{fixed_pkg}}
+
+In VHDL 2008 there is a fixed point arithmetic library, which is unfortunately not completely standardized yet. It it not always optimum in terms of resource usage and speed because it guarantees overflow prevention. To import it we simply add the following:
+\begin{lstlisting}[language = vhdl]
+-- since VHDL 2008
+library ieee;
+use ieee.fixed_generic_pkg.all;
+use ieee.fixed_float_types.all;
+\end{lstlisting}
+\begin{lstlisting}[language = vhdl]
+-- older versions
+library ieee_proposed;
+use ieee_proposed.fixed_pkg.all;
+use ieee_proposed.fixed_float_types.all;
+\end{lstlisting}
+To represent \texttt{uQn.m} numbers the syntax is:
+\begin{lstlisting}[language = vhdl]
+signal f : ufixed(`\reqph{n}` downto -`\reqph{m}`);
+\end{lstlisting}
+The minus sign implies that the values are after the comma.  To write \texttt{sQn.m} numbers there is the type \vhdl{sfixed}.  Actually any range is valid, so it is possible to write:
+\begin{lstlisting}[language = vhdl]
+signal f : ufixed(-2 downto -3);
+\end{lstlisting}
+
+Conversion operators \vhdl{to_ufixed}, \vhdl{to_sfixed} are available. To get back \(n\) and \(m\) the attributes \vhdl{'high} resp. \vhdl{'low} are available. Furthermore the library allows to control the behaviour of conversions and range limits, through arguments of \vhdl{to_ufixed} (or \vhdl{to_sfixed}).
+\begin{itemize}
+  \item Overflow is controlled with \vhdl{overflow_style} set to \vhdl{fixed_saturated} (default, value cannot increase / decrease) or \vhdl{fixed_wrap} (over / underflow).
+  \item Rounding can be controlled by setting \vhdl{roud_style} to \vhdl{fixed_round} (default) or \vhdl{fixed_truncate}.
+\end{itemize}
 
 \end{document}
