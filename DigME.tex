@@ -32,6 +32,16 @@
   timing/yunit = 4mm,
 }
 
+\usepackage[
+  european, americanports
+]{circuitikz}
+
+\ctikzset{
+  logic ports = ieee,
+  logic ports/scale = .7,
+  resistors/scale = .5,
+}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Metadata
 
@@ -95,7 +105,7 @@ Physical contraints include: I/O contraints, Netlist constraints, Placement cons
 \section{System level VHDL}
 
 \subsection{Aliases}
-The goal is now to build re-usable IP blocks with VHDL. For that we need to refresh some important features of the lanugage. The first of which are aliases.
+The goal is now to build re-usable intellectual property (IP) blocks with VHDL. For that we need to refresh some important features of the lanugage. The first of which are aliases.
 \begin{lstlisting}[language=vhdl]
 signal data_bus:
   std_logic_vector(31 downto 0);
@@ -245,7 +255,7 @@ package body parity_helpers is
   -- functions
   function pargen(avect: std_ulogic_vector)
     return std_ulogic
-  is `\textrm{From listing \ref{lst:pargen}}`
+  is `\ldots \textrm{same as listing \ref{lst:pargen}} \ldots`
   end function pargen;
   -- instantiation of variables
   constant nibble : integer := 4;
@@ -329,5 +339,64 @@ Conversion operators \vhdl{to_ufixed}, \vhdl{to_sfixed} are available. To get ba
   \item Overflow is controlled with \vhdl{overflow_style} set to \vhdl{fixed_saturated} (default, value cannot increase / decrease) or \vhdl{fixed_wrap} (over / underflow).
   \item Rounding can be controlled by setting \vhdl{roud_style} to \vhdl{fixed_round} (default) or \vhdl{fixed_truncate}.
 \end{itemize}
+
+\subsection{Block RAM}
+
+
+\section{Intellectual Property (IP) Blocks}
+
+\section{Serial communication}
+
+\subsection{Classification}
+
+Serial communication protocols can be categorized by various criteria. From a network topology standpoint nodes can be connected as point to point (USART), star, bus (PCI), ring, mesh (IoT), fully connected, line, or tree . From a timing perspective a communication link can be either synchronos or asynchronous. The hardware interface can be serial or parallel. The communication can be On-Chip or Off-Chip. And finally, physically the electrical signal representing bits can be single ended, differential, voltage mode, or current mode.
+
+Of the well known Open System Interconnect (OSI) model, which is composed of seven layers (from top to bottom): application, presentation, session, transport, network (packet), data-link (frame), physical (bit stream), in this course we will only care about the bottom 2, namely data-link and physical.
+
+\subsection{Logic to physical signal conversion}
+\begin{figure}[h]
+  \centering
+  \begin{circuitikz}[]
+    \draw (0,7) node[anchor = east, buffer port] (in) {}
+      to[short] ++(5mm,0)
+      to[TL, label=\(Z_0\)] ++(20mm,0) coordinate (X)
+      to[short] ++(5mm,0) node[anchor = west, buffer port] (out) {}
+      %
+      (X) to[R, label=\(R_\mathrm{f}\), label distance = 5pt, *-]
+      ++(0,3) node[tground, label=\(V_\mathrm{cco}\)] {}
+    ;
+
+    \draw (0,0) node[anchor = east, buffer port] (in) {}
+      to[short] ++(5mm,0) coordinate (Y)
+      to[TL, label=\(Z_0\)] ++(20mm,0) coordinate (X)
+      to[short] ++(5mm,0) node[anchor = west, buffer port] (out) {}
+      %
+      (X) to[R, label=\(R_\mathrm{n}\), label distance = 5pt, *-]
+      ++(0,3) node[tground, label=\(V_\mathrm{cco}/2\)] {}
+      %
+      (Y) to[R, label=\(R_\mathrm{f}\), *-]
+      ++(0,3) node[tground, label=\(V_\mathrm{cco}/2\)] {}
+    ;
+
+    \ctikzset{amplifiers/plus = {}, amplifiers/minus = {}}
+    \draw (-.7,-7) node[anchor = east, fd op amp, scale = .5] (in) {}
+      (in.out +) to[short] ++(1mm,5mm) to[R, label = \(R_s\)] ++(10mm,0) coordinate (Yu)
+      to[TL, label=\(Z_0\)] ++(20mm,0) coordinate (Xu)
+      %
+      (in.out -) to[short] ++(1mm,-5mm) to[R, label = \(R_s\)] ++(10mm,0) coordinate (Yd)
+      to[TL] ++(20mm,0) coordinate (Xd)
+      %
+      (in.east) ++(40mm,0) node[anchor = west, fd op amp, scale = .5] (out) {}
+      (Xd) to[short] ++(8mm,0) to[short] ++(1mm,5mm) (out.+)
+      (Xu) to[short] ++(8mm,0) to[short] ++(1mm,-5mm) (out.-)
+      %
+      (Yu) to[R, *-*, label = \(R_\mathrm{nd}\)] (Yd)
+      (Xu) to[R, *-*, label = \(R_\mathrm{fd}\)] (Xd)
+    ;
+  \end{circuitikz}
+  \caption{
+    \label{fig:termination}
+  }
+\end{figure}
 
 \end{document}
