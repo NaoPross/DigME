@@ -42,6 +42,10 @@
   resistors/scale = .5,
 }
 
+%% Customize Lists
+\usepackage{enumitem}
+\setlength{\itemsep}{0pt}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Metadata
 
@@ -71,6 +75,26 @@
 \setcounter{page}{1}
 \pagenumbering{arabic}
 
+\section{Introduction to SoC}
+
+A system on chip (SoC) is a ``complete'' system that includes
+\begin{itemize}
+  \item a microprocessor, memory, peripherals and
+  \item application specifici blocks (IP blocks).
+\end{itemize}
+SoCs can be made in FPGAs, which has the following advanteges:
+\begin{itemize}
+  \item Shorter development cycles
+  \item Lower development cost
+  \item Lower total cost for low to medium volume
+    \item More flexibility in operation (updates, etc.)
+\end{itemize}
+
+\subsection{Xilinx Zynq-7000 Family SoCs}
+
+The Zynq-7000 AP SoC architecture consists of two major sections and some analog extensions. It has a Processing System (PS) with an ARM Cortex-A9 (up to 1 GHz), a Programmable Logic (PL), and an analog / mixed signal block with 2 12-bit ADCs at 1 MS/s.
+
+The PL is built like and FPGA from the Xilinx Series 7 device. The PL is made of an array of blocks (CLB) and switch matrices. Each CLB has 2 slices, and each slice has 4 look up tables (LUT). Each LUT has 6 inputs / outputs, a carry logic, a multiplexer, and 8 flip-flops. Depending on the structure, up to 4 flip-flops can be used as latches.
 
 \section{Design Flow}
 
@@ -398,5 +422,7 @@ Of the well known Open System Interconnect (OSI) model, which is composed of sev
     \label{fig:termination}
   }
 \end{figure}
+
+
 
 \end{document}
