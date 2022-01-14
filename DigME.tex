@@ -46,6 +46,9 @@
 \usepackage{enumitem}
 \setlength{\itemsep}{0pt}
 
+%% Bibliography
+% \usepackage[biber]{biblatex}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Metadata
 
@@ -92,7 +95,12 @@ SoCs can be made in FPGAs, which has the following advanteges:
 
 \subsection{Xilinx Zynq-7000 Family SoCs}
 
-The Zynq-7000 AP SoC architecture consists of two major sections and some analog extensions. It has a Processing System (PS) with an ARM Cortex-A9 (up to 1 GHz), a Programmable Logic (PL), and an analog / mixed signal block with 2 12-bit ADCs at 1 MS/s.
+The Zynq-7000 AP SoC architecture consists of two major sections and some analog extensions. It has 
+\begin{itemize}
+  \item a Processing System (PS) with an ARM Cortex-A9 (up to 1 GHz),
+  \item a Programmable Logic (PL), and 
+  \item an analog / mixed signal block with 2 12-bit ADCs at 1 MS/s.
+\end{itemize}
 
 The PL is built like and FPGA from the Xilinx Series 7 device. The PL is made of an array of blocks (CLB) and switch matrices. Each CLB has 2 slices, and each slice has 4 look up tables (LUT). Each LUT has 6 inputs / outputs, a carry logic, a multiplexer, and 8 flip-flops. Depending on the structure, up to 4 flip-flops can be used as latches.
 
@@ -113,6 +121,14 @@ Constraints should be generally organized in three sections (or separate files):
 
 Physical contraints include: I/O contraints, Netlist constraints, Placement constraints, Routing constraings. Physical constraints are usually given through the graphical user interface.
 
+In the VIVADO IDE under the package view, multifunction pins display as part of the I/O bank they are contained in, and display with symbols representing their available functions. For example:
+\begin{itemize}
+  \item Basic I/O pins display as \emph{gray circles} by default.
+  \item Clock capable pins display as \emph{blue hexagons} by default.
+  \item VREF, VRP, and VRN pins display with a \emph{small power icon} by default.
+  \item The remaining pins display with an asterisk (*) and are not displayed by default.
+\end{itemize}
+
 \subsection{Timing constraints}
 
 % \begin{figure}[h]
@@ -125,6 +141,48 @@ Physical contraints include: I/O contraints, Netlist constraints, Placement cons
 \[
   t_\text{slack} = T - t_\text{arrival}
 \]
+
+\subsection{XDC file format}
+
+XDC files are basically a set of TCL commands. A command takes come arguments, and if the argument starts with a dash `\texttt{-}' it's an option. Curly brackets `\texttt{\{ \}}' are used to group things. Commands can be nested using square brackets `\texttt{[ ]}' (executes what is in the brackets and give it to the external command). Comment lines start with a `\texttt{\#}', long lines are extended with `\texttt{\textbackslash}'.
+
+\subsubsection{Specify properties}
+
+\begin{lstlisting}[language = tcl]
+set_property `\reqph{property}` `\reqph{hw}` \
+  [get_ports `\reqph{pin}`]
+\end{lstlisting}
+\begin{lstlisting}[language = tcl]
+set_property PACKAGE_PIN Y19 \
+  [get_ports x[1]]
+set_property IOSTANDARD LVCMOS33 \
+  [get_ports clk]
+set_property PULLTYPE PULLUP \
+  [get_ports nreset]
+\end{lstlisting}
+
+\subsubsection{Create clocks}
+
+To create primary clocks, that is it enters the design through an input port or a gigabit transceiver output pin (clock recovery), the following command is used:
+\begin{lstlisting}[language = tcl]
+# rise and fall time in ns
+create_clock -period `\reqph{T}` \
+  -name `\reqph{name}` -waveform {`\reqph{rise}` `\reqph{fall}`} \
+  [get_ports `\reqph{pin}`]
+\end{lstlisting}
+It is also possible to create generated clocks, that are associated to a master (primary or another generated) clock. A generated clock may perform an operation on its master clock, examples are: period division or multiplication (or both) and phase shift. For example to divide and invert a clock \textt{sysclk}:
+\begin{lstlisting}[language = tcl]
+create_generated_clock -name devclk \
+  -divide_by 2 -invert -master_clock \
+  -source [get_clocks sysclk] \
+  [get_pins out]
+\end{lstlisting}
+Virtual clocks, which do not physically exist, but may be useful as theoretical references or for testing, can be created by omitting the source argument for a primary clock:
+\begin{lstlisting}[language = tcl]
+create_clock -name virtclk -period 10
+\end{lstlisting}
+
+\subsubsection{Add nonidealities}
 
 \section{System level VHDL}
 
@@ -373,7 +431,7 @@ Conversion operators \vhdl{to_ufixed}, \vhdl{to_sfixed} are available. To get ba
 
 \subsection{Classification}
 
-Serial communication protocols can be categorized by various criteria. From a network topology standpoint nodes can be connected as point to point (USART), star, bus (PCI), ring, mesh (IoT), fully connected, line, or tree . From a timing perspective a communication link can be either synchronos or asynchronous. The hardware interface can be serial or parallel. The communication can be On-Chip or Off-Chip. And finally, physically the electrical signal representing bits can be single ended, differential, voltage mode, or current mode.
+Serial communication protocols can be categorized by various criteria. From a network topology standpoint nodes can be connected as point to point (USART), star, bus (PCI), ring, mesh (IoT), fully connected, line, or tree. From a timing perspective a communication link can be either synchronos or asynchronous. The hardware interface can be serial or parallel. The communication can be On-Chip or Off-Chip. And finally, physically the electrical signal representing bits can be single ended, differential, voltage mode, or current mode.
 
 Of the well known Open System Interconnect (OSI) model, which is composed of seven layers (from top to bottom): application, presentation, session, transport, network (packet), data-link (frame), physical (bit stream), in this course we will only care about the bottom 2, namely data-link and physical.
 
@@ -423,6 +481,6 @@ Of the well known Open System Interconnect (OSI) model, which is composed of sev
   }
 \end{figure}
 
-
+\subsection{}
 
 \end{document}
